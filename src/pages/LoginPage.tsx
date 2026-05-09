@@ -11,11 +11,6 @@ export default function LoginPage() {
 
       <div className="w-full max-w-md p-8 sm:p-10 bg-white/70 dark:bg-gray-900/70 backdrop-blur-2xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-white/50 dark:border-gray-800 m-4 relative z-10">
         <div className="flex flex-col items-center mb-10">
-          <div className="w-14 h-14 bg-gradient-to-tr from-indigo-600 to-indigo-400 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-600/30 mb-6 transform -rotate-6 hover:rotate-0 transition-transform duration-300">
-            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight">
             Welcome back
           </h1>
