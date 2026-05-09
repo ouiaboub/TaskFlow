@@ -3,10 +3,44 @@ import React, { useState } from 'react';
 export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+
+  const validate = () => {
+    const newErrors: { email?: string; password?: string } = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!email) {
+      newErrors.email = 'L\'adresse email est requise.';
+    } else if (!emailRegex.test(email)) {
+      newErrors.email = 'Veuillez entrer une adresse email valide.';
+    }
+
+    if (!password) {
+      newErrors.password = 'Le mot de passe est requis.';
+    } else if (password.length < 8) {
+      newErrors.password = 'Le mot de passe doit contenir au moins 8 caractères.';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login attempt:', { email, password });
+    if (validate()) {
+      console.log('Login attempt:', { email, password });
+      // You can call your API here
+    }
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    if (errors.email) setErrors({ ...errors, email: undefined });
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+    if (errors.password) setErrors({ ...errors, password: undefined });
   };
 
   return (
@@ -18,11 +52,19 @@ export default function LoginForm() {
         <input
           type="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all duration-200 backdrop-blur-sm shadow-sm"
+          onChange={handleEmailChange}
+          className={`w-full px-4 py-3 rounded-xl border ${
+            errors.email 
+              ? 'border-red-500 focus:ring-red-500 dark:border-red-500' 
+              : 'border-gray-200 dark:border-gray-700 focus:ring-indigo-500'
+          } bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent outline-none transition-all duration-200 backdrop-blur-sm shadow-sm`}
           placeholder="you@example.com"
-          required
         />
+        {errors.email && (
+          <p className="mt-1.5 text-sm text-red-500 dark:text-red-400 animate-pulse">
+            {errors.email}
+          </p>
+        )}
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
@@ -31,11 +73,19 @@ export default function LoginForm() {
         <input
           type="password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all duration-200 backdrop-blur-sm shadow-sm"
+          onChange={handlePasswordChange}
+          className={`w-full px-4 py-3 rounded-xl border ${
+            errors.password 
+              ? 'border-red-500 focus:ring-red-500 dark:border-red-500' 
+              : 'border-gray-200 dark:border-gray-700 focus:ring-indigo-500'
+          } bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent outline-none transition-all duration-200 backdrop-blur-sm shadow-sm`}
           placeholder="••••••••"
-          required
         />
+        {errors.password && (
+          <p className="mt-1.5 text-sm text-red-500 dark:text-red-400 animate-pulse">
+            {errors.password}
+          </p>
+        )}
       </div>
       <div className="flex items-center justify-between mt-1">
         <label className="flex items-center gap-2.5 cursor-pointer group">
@@ -63,3 +113,4 @@ export default function LoginForm() {
     </form>
   );
 }
+
