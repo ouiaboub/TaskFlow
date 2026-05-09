@@ -43,14 +43,34 @@ export default function LoginForm() {
           body: JSON.stringify({ email, password }),
         });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || 'Échec de l\'authentification. Vérifiez vos identifiants.');
+        // 1. Parse JSON safely
+        const contentType = response.headers.get("content-type");
+        let data: any = null;
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          data = await response.json();
         }
 
-        // Save JWT token
-        if (data.token) {
+        // 2. Handle HTTP Errors properly
+        if (!response.ok) {
+          let errorMessage = 'Échec de l\'authentification.';
+          
+          if (response.status === 401 || response.status === 403) {
+            errorMessage = 'Email ou mot de passe incorrect.';
+          } else if (response.status === 404) {
+            errorMessage = 'Service introuvable. Vérifiez l\'URL de l\'API.';
+          } else if (response.status >= 500) {
+            errorMessage = 'Erreur serveur. Veuillez réessayer plus tard.';
+          } else if (data && data.message) {
+            errorMessage = data.message;
+          } else if (data && data.error) {
+            errorMessage = data.error;
+          }
+
+          throw new Error(errorMessage);
+        }
+
+        // 3. Save JWT token
+        if (data && data.token) {
           localStorage.setItem('jwt_token', data.token);
           console.log('Authentification réussie ! JWT stocké.');
           // window.location.href = '/dashboard'; // Optionally redirect
@@ -58,7 +78,12 @@ export default function LoginForm() {
           throw new Error('Aucun token reçu du serveur.');
         }
       } catch (err: any) {
-        setApiError(err.message || 'Une erreur inattendue s\'est produite.');
+        // 4. Handle Network Errors (like API down, CORS, etc.)
+        if (err.name === 'TypeError' && err.message.includes('fetch')) {
+          setApiError('Impossible de se connecter au serveur. Vérifiez votre connexion ou l\'état du serveur.');
+        } else {
+          setApiError(err.message || 'Une erreur inattendue s\'est produite.');
+        }
       } finally {
         setIsLoading(false);
       }
