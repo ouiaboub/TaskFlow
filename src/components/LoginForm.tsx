@@ -4,6 +4,8 @@ export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState('');
 
   const validate = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -25,11 +27,41 @@ export default function LoginForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setApiError(''); // clear any previous API error
+
     if (validate()) {
-      console.log('Login attempt:', { email, password });
-      // You can call your API here
+      setIsLoading(true);
+      try {
+        // Replace with your actual API endpoint URL
+        const response = await fetch('http://localhost:8080/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Échec de l\'authentification. Vérifiez vos identifiants.');
+        }
+
+        // Save JWT token
+        if (data.token) {
+          localStorage.setItem('jwt_token', data.token);
+          console.log('Authentification réussie ! JWT stocké.');
+          // window.location.href = '/dashboard'; // Optionally redirect
+        } else {
+          throw new Error('Aucun token reçu du serveur.');
+        }
+      } catch (err: any) {
+        setApiError(err.message || 'Une erreur inattendue s\'est produite.');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -45,6 +77,16 @@ export default function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full max-w-sm">
+      {apiError && (
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200 dark:bg-red-900/30 dark:border-red-800/50 flex items-start gap-3">
+          <svg className="w-5 h-5 text-red-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="text-sm text-red-700 dark:text-red-300">
+            {apiError}
+          </p>
+        </div>
+      )}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
           Email Address
@@ -103,12 +145,27 @@ export default function LoginForm() {
       </div>
       <button
         type="submit"
-        className="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3.5 px-4 rounded-xl transition-all duration-200 shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/40 active:transform active:scale-[0.98] flex justify-center items-center gap-2"
+        disabled={isLoading}
+        className={`w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3.5 px-4 rounded-xl transition-all duration-200 shadow-lg shadow-indigo-600/30 flex justify-center items-center gap-2 ${
+          isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:shadow-indigo-600/40 active:transform active:scale-[0.98]'
+        }`}
       >
-        Sign in
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-        </svg>
+        {isLoading ? (
+          <>
+            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Connexion...
+          </>
+        ) : (
+          <>
+            Se connecter
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </>
+        )}
       </button>
     </form>
   );
