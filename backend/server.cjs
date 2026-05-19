@@ -150,6 +150,55 @@ app.get('/api/tasks', authenticateToken, (req, res) => {
   });
 });
 
+// Route pour créer une tâche
+app.post('/api/tasks', authenticateToken, (req, res) => {
+  const { title, description, status } = req.body;
+  if (!title) {
+    return res.status(400).json({ error: 'Le titre de la tâche est requis.' });
+  }
+
+  const taskStatus = status || 'TODO';
+  db.run('INSERT INTO tasks (title, description, status, user_id) VALUES (?, ?, ?, ?)', 
+    [title, description, taskStatus, req.user.id], 
+    function(err) {
+      if (err) return res.status(500).json({ error: 'Erreur lors de la création de la tâche.' });
+      
+      db.get('SELECT * FROM tasks WHERE id = ?', [this.lastID], (err, row) => {
+        if (err) return res.status(500).json({ error: 'Erreur lors de la récupération.' });
+        res.status(201).json(row);
+      });
+  });
+});
+
+// Route pour mettre à jour une tâche
+app.put('/api/tasks/:id', authenticateToken, (req, res) => {
+  const { id } = req.params;
+  const { title, description, status } = req.body;
+
+  db.run('UPDATE tasks SET title = ?, description = ?, status = ? WHERE id = ? AND user_id = ?', 
+    [title, description, status, id, req.user.id], 
+    function(err) {
+      if (err) return res.status(500).json({ error: 'Erreur lors de la mise à jour.' });
+      if (this.changes === 0) return res.status(404).json({ error: 'Tâche non trouvée.' });
+      
+      res.json({ id: parseInt(id), title, description, status, user_id: req.user.id });
+  });
+});
+
+// Route pour supprimer une tâche
+app.delete('/api/tasks/:id', authenticateToken, (req, res) => {
+  const { id } = req.params;
+
+  db.run('DELETE FROM tasks WHERE id = ? AND user_id = ?', 
+    [id, req.user.id], 
+    function(err) {
+      if (err) return res.status(500).json({ error: 'Erreur lors de la suppression.' });
+      if (this.changes === 0) return res.status(404).json({ error: 'Tâche non trouvée.' });
+      
+      res.json({ message: 'Tâche supprimée avec succès.' });
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Backend TaskFlow démarré sur http://localhost:${PORT}`);
 });
